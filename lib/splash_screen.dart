@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login/login.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -95,13 +96,13 @@ class _SplashScreenState extends State<SplashScreen>
       }
     }
 
-    // 모든 애니메이션이 끝난 후 1초 더 보여주고 다음 화면으로 이동
-    // await Future.delayed(const Duration(milliseconds: 1000));
-    // if (mounted) {
-    //   Navigator.of(context).pushReplacement(
-    //     MaterialPageRoute(builder: (context) => const MainScreen()),
-    //   );
-    // }
+    // 모든 애니메이션이 끝난 후 1초 더 보여주고 로그인 화면으로 이동
+    await Future.delayed(const Duration(milliseconds: 1000));
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 
   @override
