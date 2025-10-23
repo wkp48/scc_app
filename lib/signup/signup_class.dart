@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'signup_fam.dart';
+import 'signup_sub.dart';
 
 class SignupClassScreen extends StatelessWidget {
   const SignupClassScreen({super.key});
@@ -51,7 +53,11 @@ class SignupClassScreen extends StatelessWidget {
                       backgroundColor: const Color(0xFF09E89E),
                       onTap: () {
                         // 대상자 회원가입 페이지로 이동
-                        print('대상자 선택');
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SignupSubScreen(),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -66,7 +72,11 @@ class SignupClassScreen extends StatelessWidget {
                       backgroundColor: const Color(0xFFFF9999),
                       onTap: () {
                         // 가족 회원가입 페이지로 이동
-                        print('가족 선택');
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SignupFamScreen(),
+                          ),
+                        );
                       },
                     ),
                   ),
