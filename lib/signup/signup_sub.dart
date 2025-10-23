@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'signup_complete_check.dart';
+import '../services/api_service.dart';
 
 class SignupSubScreen extends StatefulWidget {
   const SignupSubScreen({super.key});
@@ -20,6 +21,7 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
 
   bool _isIdAvailable = false;
   bool _isEmailVerified = false;
+  bool _isLoading = false;
   
   // 폼 검증을 위한 변수들
   String? _nameError;
@@ -438,17 +440,50 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (_validateForm()) {
-                            // 회원가입 성공 처리 - 바로 완료 화면으로 이동
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => SignupCompleteCheckScreen(
-                                  userName: _nameController.text,
-                                  userType: '대상자',
-                                ),
-                              ),
-                            );
+                            try {
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              
+                              // 회원가입 API 호출
+                              final response = await ApiService.signupSubject(
+                                name: _nameController.text,
+                                userid: _idController.text,
+                                email: _emailController.text,
+                                password: _passwordController.text,
+                                birthDate: _birthController.text,
+                                teacherName: _teacherController.text,
+                              );
+                              
+                              setState(() {
+                                _isLoading = false;
+                              });
+                              
+                              if (response['success'] == true) {
+                                // 회원가입 성공 - 완료 화면으로 이동
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => SignupCompleteCheckScreen(
+                                      userName: _nameController.text,
+                                      userType: '대상자',
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(response['message'] ?? '회원가입에 실패했습니다')),
+                                );
+                              }
+                            } catch (e) {
+                              setState(() {
+                                _isLoading = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('회원가입 중 오류가 발생했습니다: $e')),
+                              );
+                            }
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -457,14 +492,23 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                             borderRadius: BorderRadius.circular(25),
                           ),
                         ),
-                        child: const Text(
-                          '회원가입',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
+                        child: _isLoading 
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                              ),
+                            )
+                          : const Text(
+                              '회원가입',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
                       ),
                     ),
                   ],
@@ -564,10 +608,41 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
             Container(
               height: 45,
               child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isIdAvailable = true;
-                  });
+                onPressed: () async {
+                  if (_idController.text.isNotEmpty && _validateId(_idController.text)) {
+                    try {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      
+                      // 아이디 중복 확인 API 호출
+                      final response = await ApiService.checkUserId(_idController.text);
+                      
+                      setState(() {
+                        _isLoading = false;
+                        if (response['success'] == true && response['data'] == true) {
+                          _isIdAvailable = true;
+                        } else {
+                          _isIdAvailable = false;
+                        }
+                      });
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(response['message'] ?? '아이디 확인 완료')),
+                      );
+                    } catch (e) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('아이디 확인 중 오류가 발생했습니다: $e')),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('올바른 아이디를 입력해주세요')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF09E89E),
@@ -576,13 +651,22 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  '중복확인',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
+                child: _isLoading 
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      '중복확인',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
+                    ),
               ),
             ),
           ],
@@ -648,9 +732,41 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
             Container(
               height: 45,
               child: ElevatedButton(
-                onPressed: () {
-                  // 이메일 인증 로직
-                  print('이메일 인증 요청');
+                onPressed: () async {
+                  if (_emailController.text.isNotEmpty && _validateEmail(_emailController.text)) {
+                    try {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      
+                      // 이메일 중복 확인 API 호출
+                      final response = await ApiService.checkEmail(_emailController.text);
+                      
+                      setState(() {
+                        _isLoading = false;
+                        if (response['success'] == true && response['data'] == true) {
+                          _isEmailVerified = true;
+                        } else {
+                          _isEmailVerified = false;
+                        }
+                      });
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(response['message'] ?? '이메일 확인 완료')),
+                      );
+                    } catch (e) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('이메일 확인 중 오류가 발생했습니다: $e')),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('올바른 이메일을 입력해주세요')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF09E89E),
@@ -659,13 +775,22 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  '인증받기',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
+                child: _isLoading 
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      '인증받기',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
+                    ),
               ),
             ),
           ],

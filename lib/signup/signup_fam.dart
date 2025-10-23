@@ -16,15 +16,17 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _birthController = TextEditingController();
+  final TextEditingController _familyRelationController = TextEditingController();
+  final TextEditingController _relatedSubjectIdController = TextEditingController();
   
   // 생년월일 선택용 변수들
   int _selectedYear = DateTime.now().year;
   int _selectedMonth = DateTime.now().month;
   int _selectedDay = DateTime.now().day;
-  final TextEditingController _teacherController = TextEditingController();
 
   bool _isIdAvailable = false;
   bool _isEmailVerified = false;
+  bool _isLoading = false;
   
   // 폼 검증을 위한 변수들
   String? _nameError;
@@ -33,7 +35,8 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
   String? _passwordError;
   String? _confirmPasswordError;
   String? _birthError;
-  String? _teacherError;
+  String? _familyRelationError;
+  String? _relatedSubjectIdError;
 
   @override
   void initState() {
@@ -128,12 +131,25 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
     return true;
   }
 
-  bool _validateTeacher(String teacher) {
-    if (teacher.isEmpty) {
-      _teacherError = "담당 선생님을 입력해주세요";
+  bool _validateFamilyRelation(String familyRelation) {
+    if (familyRelation.isEmpty) {
+      _familyRelationError = "가족 관계를 입력해주세요";
       return false;
     }
-    _teacherError = null;
+    _familyRelationError = null;
+    return true;
+  }
+
+  bool _validateRelatedSubjectId(String relatedSubjectId) {
+    if (relatedSubjectId.isEmpty) {
+      _relatedSubjectIdError = "연결된 대상자 아이디를 입력해주세요";
+      return false;
+    }
+    if (relatedSubjectId.length < 4) {
+      _relatedSubjectIdError = "아이디는 4자 이상이어야 합니다";
+      return false;
+    }
+    _relatedSubjectIdError = null;
     return true;
   }
 
@@ -146,7 +162,8 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
     isValid &= _validatePassword(_passwordController.text);
     isValid &= _validateConfirmPassword(_confirmPasswordController.text);
     isValid &= _validateBirth();
-    isValid &= _validateTeacher(_teacherController.text);
+    isValid &= _validateFamilyRelation(_familyRelationController.text);
+    isValid &= _validateRelatedSubjectId(_relatedSubjectIdController.text);
     isValid &= _isIdAvailable;
     isValid &= _isEmailVerified;
     
@@ -338,7 +355,8 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _birthController.dispose();
-    _teacherController.dispose();
+    _familyRelationController.dispose();
+    _relatedSubjectIdController.dispose();
     super.dispose();
   }
 
@@ -428,8 +446,81 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                     
                     const SizedBox(height: 20),
                     
-                    // 담당 선생님 입력
-                    _buildInputField('담당 선생님', _teacherController, errorText: _teacherError),
+                    // 가족 관계 입력
+                    _buildInputField('가족 관계', _familyRelationController, errorText: _familyRelationError),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // 연결된 대상자 ID 입력
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '연결된 대상자 아이디',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 45,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: _relatedSubjectIdError != null ? Border.all(color: Colors.red, width: 1) : null,
+                                ),
+                                child: TextField(
+                                  controller: _relatedSubjectIdController,
+                                  keyboardType: TextInputType.text,
+                                  onChanged: (value) => _validateRelatedSubjectId(value),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 80,
+                              height: 45,
+                              child: ElevatedButton(
+                                onPressed: _checkSubjectId,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF09E89E),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  '확인',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_relatedSubjectIdError != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            _relatedSubjectIdError!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                     
                     const SizedBox(height: 30),
                     
@@ -438,17 +529,35 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (_validateForm()) {
-                            // 회원가입 성공 처리 - 바로 완료 화면으로 이동
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => SignupCompleteCheckScreen(
-                                  userName: _nameController.text,
-                                  userType: '가족',
+                            try {
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              
+                              // 회원가입 처리 (API 연동 제거)
+                              setState(() {
+                                _isLoading = false;
+                              });
+                              
+                              // 회원가입 성공 - 완료 화면으로 이동
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (context) => SignupCompleteCheckScreen(
+                                    userName: _nameController.text,
+                                    userType: '가족',
+                                  ),
                                 ),
-                              ),
-                            );
+                              );
+                            } catch (e) {
+                              setState(() {
+                                _isLoading = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('회원가입 중 오류가 발생했습니다: $e')),
+                              );
+                            }
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -458,14 +567,23 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          '회원가입',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
+                        child: _isLoading 
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                              ),
+                            )
+                          : const Text(
+                              '회원가입',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
                       ),
                     ),
                   ],
@@ -506,7 +624,8 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
               // 실시간 검증
               if (label == '이름') _validateName(value);
               else if (label == '비밀번호 확인') _validateConfirmPassword(value);
-              else if (label == '담당 선생님') _validateTeacher(value);
+              else if (label == '가족 관계') _validateFamilyRelation(value);
+              else if (label == '연결된 대상자 ID') _validateRelatedSubjectId(value);
             },
             decoration: InputDecoration(
               border: InputBorder.none,
@@ -565,10 +684,35 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
             Container(
               height: 45,
               child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isIdAvailable = true;
-                  });
+                onPressed: () async {
+                  if (_idController.text.isNotEmpty && _validateId(_idController.text)) {
+                    try {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      
+                      // 아이디 중복 확인 (API 연동 제거)
+                      setState(() {
+                        _isIdAvailable = true; // 항상 사용 가능으로 설정
+                        _isLoading = false;
+                      });
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('사용 가능한 아이디입니다')),
+                      );
+                    } catch (e) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('아이디 확인 중 오류가 발생했습니다: $e')),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('올바른 아이디를 입력해주세요')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF09E89E),
@@ -577,13 +721,22 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  '중복확인',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
+                child: _isLoading 
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      '중복확인',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
+                    ),
               ),
             ),
           ],
@@ -649,9 +802,34 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
             Container(
               height: 45,
               child: ElevatedButton(
-                onPressed: () {
-                  // 이메일 인증 로직
-                  print('이메일 인증 요청');
+                onPressed: () async {
+                  if (_emailController.text.isNotEmpty && _validateEmail(_emailController.text)) {
+                    try {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      
+                      // 이메일 인증 (API 연동 제거)
+                      setState(() {
+                        _isEmailVerified = true;
+                        _isLoading = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('인증번호가 발송되었습니다')),
+                      );
+                    } catch (e) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('이메일 인증 중 오류가 발생했습니다: $e')),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('올바른 이메일을 입력해주세요')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF09E89E),
@@ -660,13 +838,22 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  '인증받기',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
+                child: _isLoading 
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      '인증받기',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
+                    ),
               ),
             ),
           ],
@@ -863,5 +1050,63 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
         ],
       ],
     );
+  }
+
+  // 대상자 아이디 확인 메서드
+  Future<void> _checkSubjectId() async {
+    final subjectUserid = _relatedSubjectIdController.text.trim();
+    
+    if (subjectUserid.isEmpty) {
+      setState(() {
+        _relatedSubjectIdError = "대상자 아이디를 입력해주세요";
+      });
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+      _relatedSubjectIdError = null;
+    });
+    
+    try {
+      // 대상자 확인 (API 연동 제거)
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // 가상의 대상자 정보 표시
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('대상자 확인'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('이름: ${subjectUserid}'),
+                Text('아이디: ${subjectUserid}'),
+                Text('이메일: ${subjectUserid}@example.com'),
+                Text('생년월일: 1990-01-01'),
+                Text('담당선생님: 선생님'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('확인'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _relatedSubjectIdError = "대상자 확인 중 오류가 발생했습니다";
+      });
+    }
   }
 }
