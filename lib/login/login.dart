@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../signup/signup_class.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,19 +25,19 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: const Color(0xFFFFF8EB), // 베이지색 배경
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 48.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // 로고 섹션
               _buildLogoSection(),
+              // 제목 텍스트 (로고와 겹치게 하기 위해 아래로 내림)
+              Transform.translate(
+                offset: const Offset(0, -40),
+                child: _buildTitleText(),
+              ),
               
-              const SizedBox(height: 40),
-              
-              // 제목 텍스트
-              _buildTitleText(),
-              
-              const SizedBox(height: 50),
+              const SizedBox(height: 20),
               
               // 입력 필드들
               _buildInputFields(),
@@ -72,17 +73,17 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           '세종충북',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 30,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: Color(0xFFF8942E),
           ),
         ),
         Text(
-          '도박문제예방센터',
+          '도박문제예방치유센터',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 30,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: Color(0xFFF8942E),
           ),
         ),
       ],
@@ -144,11 +145,11 @@ class _LoginScreenState extends State<LoginScreen> {
           print('로그인 시도: ${_idController.text}');
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF09E89E),
+          //경계선 둥글게 하기 위해 30으로 설정
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
+            borderRadius: BorderRadius.circular(30),
+          ),        
         ),
         child: const Text(
           '로그인',
@@ -169,7 +170,11 @@ class _LoginScreenState extends State<LoginScreen> {
         GestureDetector(
           onTap: () {
             // 회원가입 페이지로 이동
-            print('회원가입 클릭');
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const SignupClassScreen(),
+              ),
+            );
           },
           child: const Text(
             '회원가입',
