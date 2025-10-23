@@ -154,54 +154,6 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
     return isValid;
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Row(
-          children: [
-            Icon(
-              Icons.check_circle,
-              color: Color(0xFF09E89E),
-              size: 30,
-            ),
-            SizedBox(width: 10),
-            Text('회원가입 완료'),
-          ],
-        ),
-        content: const Text('가족 회원가입이 성공적으로 완료되었습니다!'),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // 다이얼로그 닫기
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => SignupCompleteCheckScreen(
-                    userName: _nameController.text,
-                    userType: '가족',
-                  ),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF09E89E),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-            ),
-            child: const Text(
-              '확인',
-              style: TextStyle(color: Colors.black),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showDateSelector() {
     showModalBottomSheet(
