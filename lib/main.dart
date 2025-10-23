@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'splash_screen/splash_screen.dart';
+import 'login/login.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,6 +14,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // DEBUG 배너 제거
       home: const SplashScreen(), //스플래시 화면을 첫 화면으로 설정
+      routes: {
+        '/login': (context) => const LoginScreen(),
+      },
     );
   }
 }

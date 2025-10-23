@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'signup_complete_check.dart';
 
 class SignupSubScreen extends StatefulWidget {
   const SignupSubScreen({super.key});
@@ -177,8 +178,14 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // 다이얼로그 닫기
-              Navigator.of(context).pop(); // 회원가입 화면 닫기
-              Navigator.of(context).pop(); // 선택 화면 닫기
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => SignupCompleteCheckScreen(
+                    userName: _nameController.text,
+                    userType: '대상자',
+                  ),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF09E89E),
@@ -481,8 +488,15 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           if (_validateForm()) {
-                            // 회원가입 성공 처리
-                            _showSuccessDialog();
+                            // 회원가입 성공 처리 - 바로 완료 화면으로 이동
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (context) => SignupCompleteCheckScreen(
+                                  userName: _nameController.text,
+                                  userType: '대상자',
+                                ),
+                              ),
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(

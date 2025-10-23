@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'signup_complete_check.dart';
 
 class SignupFamScreen extends StatefulWidget {
   const SignupFamScreen({super.key});
@@ -15,7 +16,6 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _birthController = TextEditingController();
-  DateTime? _selectedDate;
   
   // 생년월일 선택용 변수들
   int _selectedYear = DateTime.now().year;
@@ -178,8 +178,14 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // 다이얼로그 닫기
-              Navigator.of(context).pop(); // 회원가입 화면 닫기
-              Navigator.of(context).pop(); // 선택 화면 닫기
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => SignupCompleteCheckScreen(
+                    userName: _nameController.text,
+                    userType: '가족',
+                  ),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF09E89E),
@@ -482,8 +488,15 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           if (_validateForm()) {
-                            // 회원가입 성공 처리
-                            _showSuccessDialog();
+                            // 회원가입 성공 처리 - 바로 완료 화면으로 이동
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (context) => SignupCompleteCheckScreen(
+                                  userName: _nameController.text,
+                                  userType: '가족',
+                                ),
+                              ),
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(

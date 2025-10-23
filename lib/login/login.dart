@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../signup/signup_class.dart';
+import '../find/find_id.dart';
+import '../find/find_pw.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -185,19 +187,52 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        GestureDetector(
-          onTap: () {
-            // 아이디/비밀번호 찾기 페이지로 이동
-            print('아이디/비밀번호 찾기 클릭');
-          },
-          child: const Text(
-            '아이디 / 비밀번호 찾기',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black,
-              decoration: TextDecoration.underline,
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () {
+                // 아이디 찾기 페이지로 이동
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const FindIdScreen(),
+                  ),
+                );
+              },
+              child: const Text(
+                '아이디 찾기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
-          ),
+            const Text(
+              ' / ',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                // 비밀번호 찾기 페이지로 이동
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const FindPwScreen(),
+                  ),
+                );
+              },
+              child: const Text(
+                '비밀번호 찾기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
