@@ -3,11 +3,19 @@ import 'package:flutter/material.dart';
 class SignupCompleteCheckScreen extends StatefulWidget {
   final String userName;
   final String userType; // '대상자' 또는 '가족'
+  final String userid;
+  final String email;
+  final String birthDate;
+  final String teacherName;
 
   const SignupCompleteCheckScreen({
     super.key,
     required this.userName,
     required this.userType,
+    required this.userid,
+    required this.email,
+    required this.birthDate,
+    required this.teacherName,
   });
 
   @override

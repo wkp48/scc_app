@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'signup_complete_check.dart';
+import '../services/api_service.dart';
 
 class SignupFamScreen extends StatefulWidget {
   const SignupFamScreen({super.key});
@@ -27,6 +28,12 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
   bool _isIdAvailable = false;
   bool _isEmailVerified = false;
   bool _isLoading = false;
+  
+  // 중복 확인 상태 변수들
+  bool _isIdChecked = false;
+  bool _isIdDuplicate = false;
+  bool _isEmailChecked = false;
+  bool _isEmailDuplicate = false;
   
   // 폼 검증을 위한 변수들
   String? _nameError;
@@ -530,26 +537,45 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: () async {
-                          if (_validateForm()) {
+                          if (_validateForm() && _isIdAvailable && _isEmailVerified) {
                             try {
                               setState(() {
                                 _isLoading = true;
                               });
                               
-                              // 회원가입 처리 (API 연동 제거)
+                              // 가족 회원가입 API 호출
+                              final response = await ApiService.signupFamily(
+                                _nameController.text,
+                                _idController.text,
+                                _emailController.text,
+                                _passwordController.text,
+                                _familyRelationController.text,
+                                _relatedSubjectIdController.text.isNotEmpty ? _relatedSubjectIdController.text : null,
+                              );
+
                               setState(() {
                                 _isLoading = false;
                               });
-                              
-                              // 회원가입 성공 - 완료 화면으로 이동
+
+                              if (response['success'] == true) {
+                                // 회원가입 성공 - 완료 화면으로 이동
                               Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
                                   builder: (context) => SignupCompleteCheckScreen(
                                     userName: _nameController.text,
                                     userType: '가족',
+                                    userid: _idController.text,
+                                    email: _emailController.text,
+                                    birthDate: _birthController.text,
+                                    teacherName: '가족 회원',
                                   ),
                                 ),
                               );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(response['message'] ?? '회원가입에 실패했습니다')),
+                                );
+                              }
                             } catch (e) {
                               setState(() {
                                 _isLoading = false;
@@ -561,7 +587,9 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF09E89E),
+                          backgroundColor: (_isIdAvailable && _isEmailVerified) 
+                              ? const Color(0xFF09E89E) 
+                              : Colors.grey,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
                           ),
@@ -663,22 +691,32 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
         Row(
           children: [
             Expanded(
-              child:         Container(
-          height: 45,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: _idError != null ? Border.all(color: Colors.red, width: 1) : null,
-          ),
-          child: TextField(
-            controller: _idController,
-            onChanged: (value) => _validateId(value),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-        ),
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: _idError != null ? Border.all(color: Colors.red, width: 1) : null,
+                ),
+                child: TextField(
+                  controller: _idController,
+                  onChanged: (value) {
+                    _validateId(value);
+                    // 아이디가 변경되면 중복 확인 상태 초기화
+                    if (_isIdChecked) {
+                      setState(() {
+                        _isIdChecked = false;
+                        _isIdAvailable = false;
+                        _isIdDuplicate = false;
+                      });
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             Container(
@@ -690,16 +728,22 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                       setState(() {
                         _isLoading = true;
                       });
-                      
-                      // 아이디 중복 확인 (API 연동 제거)
+
+                      // 아이디 중복 확인 API 호출
+                      final response = await ApiService.checkUserId(_idController.text);
+
                       setState(() {
-                        _isIdAvailable = true; // 항상 사용 가능으로 설정
                         _isLoading = false;
+                        _isIdChecked = true;
+                        if (response['success'] == true && response['data'] == true) {
+                          _isIdAvailable = true;
+                          _isIdDuplicate = false;
+                        } else {
+                          _isIdAvailable = false;
+                          _isIdDuplicate = true;
+                        }
                       });
                       
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('사용 가능한 아이디입니다')),
-                      );
                     } catch (e) {
                       setState(() {
                         _isLoading = false;
@@ -741,17 +785,27 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
             ),
           ],
         ),
-        if (_isIdAvailable) ...[
-          const SizedBox(height: 8),
-          const Text(
-            '사용 가능한 아이디 입니다',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.blue,
+        const SizedBox(height: 8),
+        if (_isIdChecked) ...[
+          if (_isIdAvailable) ...[
+            const Text(
+              '사용 가능한 아이디입니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue,
+              ),
             ),
-          ),
+          ] else if (_isIdDuplicate) ...[
+            const Text(
+              '이미 사용 중인 아이디입니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ] else if (_idError != null) ...[
-          const SizedBox(height: 8),
           Text(
             _idError!,
             style: const TextStyle(
@@ -790,7 +844,17 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                 child: TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  onChanged: (value) => _validateEmail(value),
+                  onChanged: (value) {
+                    _validateEmail(value);
+                    // 이메일이 변경되면 중복 확인 상태 초기화
+                    if (_isEmailChecked) {
+                      setState(() {
+                        _isEmailChecked = false;
+                        _isEmailVerified = false;
+                        _isEmailDuplicate = false;
+                      });
+                    }
+                  },
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -808,15 +872,21 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                       setState(() {
                         _isLoading = true;
                       });
-                      
-                      // 이메일 인증 (API 연동 제거)
+
+                      // 이메일 중복 확인 API 호출
+                      final response = await ApiService.checkEmail(_emailController.text);
+
                       setState(() {
-                        _isEmailVerified = true;
                         _isLoading = false;
+                        _isEmailChecked = true;
+                        if (response['success'] == true && response['data'] == true) {
+                          _isEmailVerified = true;
+                          _isEmailDuplicate = false;
+                        } else {
+                          _isEmailVerified = false;
+                          _isEmailDuplicate = true;
+                        }
                       });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('인증번호가 발송되었습니다')),
-                      );
                     } catch (e) {
                       setState(() {
                         _isLoading = false;
@@ -858,8 +928,27 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
             ),
           ],
         ),
-        if (_emailError != null) ...[
-          const SizedBox(height: 8),
+        const SizedBox(height: 8),
+        if (_isEmailChecked) ...[
+          if (_isEmailVerified) ...[
+            const Text(
+              '사용 가능한 이메일입니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue,
+              ),
+            ),
+          ] else if (_isEmailDuplicate) ...[
+            const Text(
+              '이미 사용 중인 이메일입니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ] else if (_emailError != null) ...[
           Text(
             _emailError!,
             style: const TextStyle(
@@ -1069,39 +1158,56 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
     });
     
     try {
-      // 대상자 확인 (API 연동 제거)
+      // 대상자 확인 API 호출
+      final response = await ApiService.checkSubjectInfo(subjectUserid);
+      
       setState(() {
         _isLoading = false;
       });
       
-      // 가상의 대상자 정보 표시
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('대상자 확인'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('이름: ${subjectUserid}'),
-                Text('아이디: ${subjectUserid}'),
-                Text('이메일: ${subjectUserid}@example.com'),
-                Text('생년월일: 1990-01-01'),
-                Text('담당선생님: 선생님'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('확인'),
+      if (response['success'] == true) {
+        // 대상자 정보 표시
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('대상자 확인'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('이름: ${response['data']['username']}'), // 마스킹된 이름
+                  Text('아이디: ${response['data']['userid']}'),
+                  Text('이메일: ${response['data']['email']}'), // 마스킹된 이메일
+                  if (response['data']['birthDate'] != null)
+                    Text('생년월일: ${response['data']['birthDate']}'), // 마스킹된 생년월일
+                  Text('담당선생님: ${response['data']['teacherName']}'),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '※ 개인정보 보호를 위해 일부 정보는 마스킹 처리되었습니다.',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          );
-        },
-      );
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('확인'),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        setState(() {
+          _relatedSubjectIdError = response['message'] ?? "대상자 확인 중 오류가 발생했습니다";
+        });
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;

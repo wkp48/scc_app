@@ -472,6 +472,10 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                                     builder: (context) => SignupCompleteCheckScreen(
                                       userName: _nameController.text,
                                       userType: '대상자',
+                                      userid: _idController.text,
+                                      email: _emailController.text,
+                                      birthDate: _birthController.text,
+                                      teacherName: _teacherController.text,
                                     ),
                                   ),
                                 );
