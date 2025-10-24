@@ -268,4 +268,243 @@ class ApiService {
       };
     }
   }
+
+  // 비밀번호 찾기 (본인 확인)
+  static Future<Map<String, dynamic>> findPassword(String name, String userid, String birthDate, String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/find/password'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'name': name,
+          'userid': userid,
+          'birthDate': birthDate,
+          'email': email,
+        }),
+      );
+
+      print('비밀번호 찾기 응답 상태: ${response.statusCode}');
+      print('비밀번호 찾기 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isNotEmpty) {
+          return json.decode(response.body);
+        } else {
+          return {
+            'success': false,
+            'message': '서버에서 빈 응답을 받았습니다',
+            'data': null
+          };
+        }
+      } else {
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = json.decode(response.body);
+            return {
+              'success': false,
+              'message': errorData['message'] ?? '비밀번호 찾기 중 오류가 발생했습니다',
+              'data': null
+            };
+          } catch (e) {
+            return {
+              'success': false,
+              'message': '비밀번호 찾기 중 오류가 발생했습니다 (상태코드: ${response.statusCode})',
+              'data': null
+            };
+          }
+        } else {
+          return {
+            'success': false,
+            'message': '비밀번호 찾기 중 오류가 발생했습니다 (상태코드: ${response.statusCode})',
+            'data': null
+          };
+        }
+      }
+    } catch (e) {
+      print('비밀번호 찾기 오류: $e');
+      return {
+        'success': false,
+        'message': '네트워크 오류가 발생했습니다: $e',
+        'data': null
+      };
+    }
+  }
+
+  // 비밀번호 재설정
+  static Future<Map<String, dynamic>> resetPassword(String userid, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/find/password/reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'userid': userid,
+          'newPassword': newPassword,
+        }),
+      );
+
+      print('비밀번호 재설정 응답 상태: ${response.statusCode}');
+      print('비밀번호 재설정 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isNotEmpty) {
+          return json.decode(response.body);
+        } else {
+          return {
+            'success': false,
+            'message': '서버에서 빈 응답을 받았습니다',
+            'data': null
+          };
+        }
+      } else {
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = json.decode(response.body);
+            return {
+              'success': false,
+              'message': errorData['message'] ?? '비밀번호 재설정 중 오류가 발생했습니다',
+              'data': null
+            };
+          } catch (e) {
+            return {
+              'success': false,
+              'message': '비밀번호 재설정 중 오류가 발생했습니다 (상태코드: ${response.statusCode})',
+              'data': null
+            };
+          }
+        } else {
+          return {
+            'success': false,
+            'message': '비밀번호 재설정 중 오류가 발생했습니다 (상태코드: ${response.statusCode})',
+            'data': null
+          };
+        }
+      }
+    } catch (e) {
+      print('비밀번호 재설정 오류: $e');
+      return {
+        'success': false,
+        'message': '네트워크 오류가 발생했습니다: $e',
+        'data': null
+      };
+    }
+  }
+
+  // 아이디 찾기
+  static Future<Map<String, dynamic>> findUserId(String name, String birthDate, String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/find/id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'name': name,
+          'birthDate': birthDate,
+          'email': email,
+        }),
+      );
+
+      print('아이디 찾기 응답 상태: ${response.statusCode}');
+      print('아이디 찾기 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isNotEmpty) {
+          return json.decode(response.body);
+        } else {
+          return {
+            'success': false,
+            'message': '서버에서 빈 응답을 받았습니다',
+            'data': null
+          };
+        }
+      } else {
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = json.decode(response.body);
+            return {
+              'success': false,
+              'message': errorData['message'] ?? '아이디 찾기 중 오류가 발생했습니다',
+              'data': null
+            };
+          } catch (e) {
+            return {
+              'success': false,
+              'message': '아이디 찾기 중 오류가 발생했습니다 (상태코드: ${response.statusCode})',
+              'data': null
+            };
+          }
+        } else {
+          return {
+            'success': false,
+            'message': '아이디 찾기 중 오류가 발생했습니다 (상태코드: ${response.statusCode})',
+            'data': null
+          };
+        }
+      }
+    } catch (e) {
+      print('아이디 찾기 오류: $e');
+      return {
+        'success': false,
+        'message': '네트워크 오류가 발생했습니다: $e',
+        'data': null
+      };
+    }
+  }
+
+  // 로그인
+  static Future<Map<String, dynamic>> login(String userid, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'userid': userid,
+          'password': password,
+        }),
+      );
+
+      print('로그인 응답 상태: ${response.statusCode}');
+      print('로그인 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isNotEmpty) {
+          return json.decode(response.body);
+        } else {
+          return {
+            'success': false,
+            'message': '서버에서 빈 응답을 받았습니다',
+            'data': null
+          };
+        }
+      } else {
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = json.decode(response.body);
+            return {
+              'success': false,
+              'message': errorData['message'] ?? '로그인 중 오류가 발생했습니다',
+              'data': null
+            };
+          } catch (e) {
+            return {
+              'success': false,
+              'message': '로그인 중 오류가 발생했습니다 (상태코드: ${response.statusCode})',
+              'data': null
+            };
+          }
+        } else {
+          return {
+            'success': false,
+            'message': '로그인 중 오류가 발생했습니다 (상태코드: ${response.statusCode})',
+            'data': null
+          };
+        }
+      }
+    } catch (e) {
+      print('로그인 오류: $e');
+      return {
+        'success': false,
+        'message': '네트워크 오류가 발생했습니다: $e',
+        'data': null
+      };
+    }
+  }
 }

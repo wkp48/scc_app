@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../signup/signup_class.dart';
 import '../find/find_id.dart';
 import '../find/find_pw.dart';
+import '../services/api_service.dart';
+import 'login_complete_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,6 +15,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -137,15 +141,168 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> _handleLogin() async {
+    if (_idController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showErrorDialog('입력 오류', '아이디와 비밀번호를 입력해주세요');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('=== 로그인 시도 시작 ===');
+      print('아이디: ${_idController.text}');
+      print('비밀번호: ${_passwordController.text}');
+      
+      final response = await ApiService.login(
+        _idController.text,
+        _passwordController.text,
+      );
+
+      print('=== API 응답 받음 ===');
+      print('응답 데이터: $response');
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response['success'] == true) {
+        print('=== 로그인 성공 ===');
+        print('사용자 데이터: ${response['data']}');
+        
+        _showSuccessDialog('로그인 성공!', '환영합니다, ${response['data']['username']}님!');
+        
+        // 2초 후 완료 화면으로 이동
+        await Future.delayed(const Duration(seconds: 2));
+        
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => LoginCompleteScreen(
+              userData: response['data'],
+            ),
+          ),
+        );
+      } else {
+        print('=== 로그인 실패 ===');
+        print('실패 메시지: ${response['message']}');
+        
+        _showErrorDialog(
+          '로그인 실패', 
+          response['message'] ?? '로그인에 실패했습니다.\n\n자세한 정보:\n${response.toString()}'
+        );
+      }
+    } catch (e) {
+      print('=== 로그인 오류 발생 ===');
+      print('오류 타입: ${e.runtimeType}');
+      print('오류 메시지: $e');
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      _showErrorDialog(
+        '네트워크 오류', 
+        '로그인 중 오류가 발생했습니다.\n\n오류 상세:\n$e'
+      );
+    }
+  }
+
+  void _showSuccessDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF09E89E),
+          title: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                '확인',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.red[600],
+          title: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                '확인',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildLoginButton() {
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: () {
-          // 로그인 로직 구현
-          print('로그인 시도: ${_idController.text}');
-        },
+        onPressed: _isLoading ? null : _handleLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFF09E89E),
           //경계선 둥글게 하기 위해 30으로 설정
@@ -153,14 +310,23 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(30),
           ),        
         ),
-        child: const Text(
-          '로그인',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
+        child: _isLoading 
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+              ),
+            )
+          : const Text(
+              '로그인',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
       ),
     );
   }

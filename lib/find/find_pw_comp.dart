@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class FindPwResetCompleteScreen extends StatelessWidget {
+class FindPwCompleteScreen extends StatelessWidget {
   final String userName;
 
-  const FindPwResetCompleteScreen({
+  const FindPwCompleteScreen({
     super.key,
     required this.userName,
   });
@@ -11,7 +11,7 @@ class FindPwResetCompleteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF8F0), // 베이지색 배경
+      backgroundColor: const Color(0xFFFFF8EB), // 베이지색 배경
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -23,8 +23,8 @@ class FindPwResetCompleteScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(32.0),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAE7DE), // 이미지와 동일한 회색 배경
-                    borderRadius: BorderRadius.circular(20), // 이미지와 동일한 둥근 모서리
+                    color: const Color(0xFFEAE7DE), // 연한 회색/베이지색
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -35,9 +35,9 @@ class FindPwResetCompleteScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      // 완료 메시지
+                      // 비밀번호 재설정 완료 메시지
                       Text(
-                        '$userName님의 비밀번호가\n재설정 되었습니다',
+                        '${userName}님의 비밀번호가\n재설정 되었습니다',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 18,
@@ -62,7 +62,7 @@ class FindPwResetCompleteScreen extends StatelessWidget {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF09E89E), // 이미지와 동일한 민트색
+                            backgroundColor: const Color(0xFF09E89E), // 민트색
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(25),
                             ),

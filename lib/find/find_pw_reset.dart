@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'find_pw_reset_com.dart';
+import '../services/api_service.dart';
 
 class FindPwResetScreen extends StatefulWidget {
-  const FindPwResetScreen({super.key});
+  final String userid;
+  final String userName;
+  
+  const FindPwResetScreen({
+    super.key,
+    required this.userid,
+    required this.userName,
+  });
 
   @override
   State<FindPwResetScreen> createState() => _FindPwResetScreenState();
@@ -13,6 +21,7 @@ class _FindPwResetScreenState extends State<FindPwResetScreen> {
   final TextEditingController _confirmPasswordController = TextEditingController();
 
   String? _passwordError;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -105,12 +114,7 @@ class _FindPwResetScreenState extends State<FindPwResetScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (_passwordError == null && _newPasswordController.text.isNotEmpty) {
-                            // 비밀번호 재설정 완료
-                            _showResetComplete();
-                          }
-                        },
+                        onPressed: _isLoading ? null : _handleResetPassword,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF66D98F), // 이미지와 동일한 녹색
                           shape: RoundedRectangleBorder(
@@ -118,14 +122,23 @@ class _FindPwResetScreenState extends State<FindPwResetScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          '비밀번호 재설정',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
+                        child: _isLoading 
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                              ),
+                            )
+                          : const Text(
+                              '비밀번호 재설정',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
                       ),
                     ),
                   ],
@@ -219,14 +232,116 @@ class _FindPwResetScreenState extends State<FindPwResetScreen> {
     );
   }
 
-  void _showResetComplete() {
-    // 비밀번호 재설정 완료 화면으로 이동
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const FindPwResetCompleteScreen(
-          userName: '홍길동',
-        ),
-      ),
+  Future<void> _handleResetPassword() async {
+    if (_newPasswordController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
+      _showErrorDialog('입력 오류', '새 비밀번호와 비밀번호 확인을 입력해주세요');
+      return;
+    }
+
+    if (_newPasswordController.text != _confirmPasswordController.text) {
+      _showErrorDialog('비밀번호 오류', '새 비밀번호가 일치하지 않습니다');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('=== 비밀번호 재설정 시도 시작 ===');
+      print('아이디: ${widget.userid}');
+      print('새 비밀번호: ${_newPasswordController.text}');
+      
+      final response = await ApiService.resetPassword(
+        widget.userid,
+        _newPasswordController.text,
+      );
+
+      print('=== API 응답 받음 ===');
+      print('응답 데이터: $response');
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response['success'] == true) {
+        print('=== 비밀번호 재설정 성공 ===');
+        
+        // 비밀번호 재설정 완료 화면으로 이동
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => FindPwResetCompleteScreen(
+              userName: widget.userName,
+            ),
+          ),
+        );
+      } else {
+        print('=== 비밀번호 재설정 실패 ===');
+        print('실패 메시지: ${response['message']}');
+        
+        _showErrorDialog(
+          '비밀번호 재설정 실패', 
+          response['message'] ?? '비밀번호 재설정 중 오류가 발생했습니다.'
+        );
+      }
+    } catch (e) {
+      print('=== 비밀번호 재설정 오류 발생 ===');
+      print('오류 타입: ${e.runtimeType}');
+      print('오류 메시지: $e');
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      _showErrorDialog(
+        '네트워크 오류', 
+        '비밀번호 재설정 중 오류가 발생했습니다.\n\n오류 상세:\n$e'
+      );
+    }
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.red[600],
+          title: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                '확인',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
