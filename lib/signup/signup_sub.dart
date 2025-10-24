@@ -22,6 +22,10 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
   bool _isIdAvailable = false;
   bool _isEmailVerified = false;
   bool _isLoading = false;
+  bool _isIdChecked = false; // 아이디 중복 확인 여부
+  bool _isIdDuplicate = false; // 아이디 중복 여부
+  bool _isEmailChecked = false; // 이메일 중복 확인 여부
+  bool _isEmailDuplicate = false; // 이메일 중복 여부
   
   // 폼 검증을 위한 변수들
   String? _nameError;
@@ -150,7 +154,7 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
     isValid &= _validateBirth();
     isValid &= _validateTeacher(_teacherController.text);
     isValid &= _isIdAvailable;
-    isValid &= _isEmailVerified;
+    isValid &= _isEmailVerified && !_isEmailDuplicate;
     
     setState(() {});
     return isValid;
@@ -596,7 +600,17 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                 ),
                 child: TextField(
                   controller: _idController,
-                  onChanged: (value) => _validateId(value),
+                  onChanged: (value) {
+                    _validateId(value);
+                    // 아이디가 변경되면 중복 확인 상태 초기화
+                    if (_isIdChecked) {
+                      setState(() {
+                        _isIdChecked = false;
+                        _isIdAvailable = false;
+                        _isIdDuplicate = false;
+                      });
+                    }
+                  },
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -620,16 +634,17 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                       
                       setState(() {
                         _isLoading = false;
+                        _isIdChecked = true;
                         if (response['success'] == true && response['data'] == true) {
                           _isIdAvailable = true;
+                          _isIdDuplicate = false;
                         } else {
                           _isIdAvailable = false;
+                          _isIdDuplicate = true;
                         }
                       });
                       
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(response['message'] ?? '아이디 확인 완료')),
-                      );
+                      // SnackBar는 제거하고 UI에서 직접 표시
                     } catch (e) {
                       setState(() {
                         _isLoading = false;
@@ -671,15 +686,26 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
             ),
           ],
         ),
-        if (_isIdAvailable) ...[
+        if (_isIdChecked) ...[
           const SizedBox(height: 8),
-          const Text(
-            '사용 가능한 아이디 입니다',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.blue,
+          if (_isIdAvailable) ...[
+            const Text(
+              '사용 가능한 아이디입니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue,
+              ),
             ),
-          ),
+          ] else if (_isIdDuplicate) ...[
+            const Text(
+              '이미 사용 중인 아이디입니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ] else if (_idError != null) ...[
           const SizedBox(height: 8),
           Text(
@@ -720,7 +746,17 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                 child: TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  onChanged: (value) => _validateEmail(value),
+                  onChanged: (value) {
+                    _validateEmail(value);
+                    // 이메일이 변경되면 중복 확인 상태 초기화
+                    if (_isEmailChecked) {
+                      setState(() {
+                        _isEmailChecked = false;
+                        _isEmailVerified = false;
+                        _isEmailDuplicate = false;
+                      });
+                    }
+                  },
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -744,16 +780,17 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
                       
                       setState(() {
                         _isLoading = false;
+                        _isEmailChecked = true;
                         if (response['success'] == true && response['data'] == true) {
                           _isEmailVerified = true;
+                          _isEmailDuplicate = false;
                         } else {
                           _isEmailVerified = false;
+                          _isEmailDuplicate = true;
                         }
                       });
                       
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(response['message'] ?? '이메일 확인 완료')),
-                      );
+                      // SnackBar는 제거하고 UI에서 직접 표시
                     } catch (e) {
                       setState(() {
                         _isLoading = false;
@@ -795,8 +832,27 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
             ),
           ],
         ),
-        if (_emailError != null) ...[
-          const SizedBox(height: 8),
+        const SizedBox(height: 8),
+        if (_isEmailChecked) ...[
+          if (_isEmailVerified) ...[
+            const Text(
+              '사용 가능한 이메일입니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue,
+              ),
+            ),
+          ] else if (_isEmailDuplicate) ...[
+            const Text(
+              '이미 사용 중인 이메일입니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ] else if (_emailError != null) ...[
           Text(
             _emailError!,
             style: const TextStyle(
@@ -867,16 +923,6 @@ class _SignupSubScreenState extends State<SignupSubScreen> {
             ),
           ],
         ),
-        if (_isEmailVerified) ...[
-          const SizedBox(height: 8),
-          const Text(
-            '인증이 완료되었습니다',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.blue,
-            ),
-          ),
-        ],
       ],
     );
   }
