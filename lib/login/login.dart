@@ -30,34 +30,48 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8EB), // 베이지색 배경
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 48.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 로고 섹션
-              _buildLogoSection(),
-              // 제목 텍스트 (로고와 겹치게 하기 위해 아래로 내림)
-              Transform.translate(
-                offset: const Offset(0, -40),
-                child: _buildTitleText(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - 
+                         MediaQuery.of(context).padding.top - 
+                         MediaQuery.of(context).padding.bottom,
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
+                  
+                  // 로고 섹션
+                  _buildLogoSection(),
+                  
+                  // 제목 텍스트 (로고와 겹치게 하기 위해 아래로 내림)
+                  Transform.translate(
+                    offset: const Offset(0, -40),
+                    child: _buildTitleText(),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // 입력 필드들
+                  _buildInputFields(),
+                  
+                  const SizedBox(height: 30),
+                  
+                  // 로그인 버튼
+                  _buildLoginButton(),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // 하단 링크들
+                  _buildBottomLinks(),
+                  
+                  const SizedBox(height: 40),
+                ],
               ),
-              
-              const SizedBox(height: 20),
-              
-              // 입력 필드들
-              _buildInputFields(),
-              
-              const SizedBox(height: 30),
-              
-              // 로그인 버튼
-              _buildLoginButton(),
-              
-              const SizedBox(height: 20),
-              
-              // 하단 링크들
-              _buildBottomLinks(),
-            ],
+            ),
           ),
         ),
       ),
@@ -67,19 +81,18 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLogoSection() {
     return Image.asset(
       'assets/logo/MainLogo.png',
-      width: 300,
-      height: 300,
-
+      width: 250,
+      height: 250,
     );
   }
 
   Widget _buildTitleText() {
-    return  Column(
+    return Column(
       children: [
         Text(
           '세종충북',
           style: TextStyle(
-            fontSize: 30,
+            fontSize: 26,
             fontWeight: FontWeight.bold,
             color: Color(0xFFF8942E),
           ),
@@ -87,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           '도박문제예방치유센터',
           style: TextStyle(
-            fontSize: 30,
+            fontSize: 26,
             fontWeight: FontWeight.bold,
             color: Color(0xFFF8942E),
           ),
