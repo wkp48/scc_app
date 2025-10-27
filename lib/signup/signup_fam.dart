@@ -19,6 +19,7 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
   final TextEditingController _birthController = TextEditingController();
   final TextEditingController _familyRelationController = TextEditingController();
   final TextEditingController _relatedSubjectIdController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   
   // 생년월일 선택용 변수들
   int _selectedYear = DateTime.now().year;
@@ -44,15 +45,59 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
   String? _birthError;
   String? _familyRelationError;
   String? _relatedSubjectIdError;
+  String? _phoneError;
 
   @override
   void initState() {
     super.initState();
     _updateBirthText(); // 초기값 설정
+    
+    // 전화번호 자동 포맷팅 리스너 추가
+    _phoneController.addListener(() {
+      _formatPhoneNumber();
+    });
   }
 
   void _updateBirthText() {
     _birthController.text = "${_selectedYear}-${_selectedMonth.toString().padLeft(2, '0')}-${_selectedDay.toString().padLeft(2, '0')}";
+  }
+
+  // 전화번호 자동 포맷팅 함수
+  void _formatPhoneNumber() {
+    final text = _phoneController.text;
+    final cleanedText = text.replaceAll(RegExp(r'[^\d]'), ''); // 숫자만 남기기
+    
+    if (cleanedText.length <= 3) {
+      _phoneController.value = TextEditingValue(
+        text: cleanedText,
+        selection: TextSelection.collapsed(offset: cleanedText.length),
+      );
+    } else if (cleanedText.length <= 7) {
+      _phoneController.value = TextEditingValue(
+        text: '${cleanedText.substring(0, 3)}-${cleanedText.substring(3)}',
+        selection: TextSelection.collapsed(offset: cleanedText.length + 1),
+      );
+    } else {
+      _phoneController.value = TextEditingValue(
+        text: '${cleanedText.substring(0, 3)}-${cleanedText.substring(3, 7)}-${cleanedText.substring(7, 11)}',
+        selection: TextSelection.collapsed(offset: cleanedText.length + 2),
+      );
+    }
+  }
+
+  bool _validatePhone(String phone) {
+    if (phone.isEmpty) {
+      _phoneError = "전화번호를 입력해주세요";
+      return false;
+    }
+    // 하이픈 제거 후 숫자만 검사
+    final cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleanedPhone.length < 10 || cleanedPhone.length > 11) {
+      _phoneError = "올바른 전화번호를 입력해주세요";
+      return false;
+    }
+    _phoneError = null;
+    return true;
   }
 
   // 폼 검증 함수들
@@ -171,6 +216,7 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
     isValid &= _validateBirth();
     isValid &= _validateFamilyRelation(_familyRelationController.text);
     isValid &= _validateRelatedSubjectId(_relatedSubjectIdController.text);
+    isValid &= _validatePhone(_phoneController.text);
     isValid &= _isIdAvailable;
     isValid &= _isEmailVerified;
     
@@ -364,6 +410,7 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
     _birthController.dispose();
     _familyRelationController.dispose();
     _relatedSubjectIdController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -435,6 +482,11 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                     
                     // 인증번호 입력
                     _buildVerificationField(),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // 전화번호 입력
+                    _buildPhoneField(),
                     
                     const SizedBox(height: 20),
                     
@@ -536,8 +588,8 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          if (_validateForm() && _isIdAvailable && _isEmailVerified) {
+                        onPressed: (_isIdAvailable && _isEmailVerified) ? () async {
+                          if (_validateForm()) {
                             try {
                               setState(() {
                                 _isLoading = true;
@@ -551,6 +603,7 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                                 _passwordController.text,
                                 _familyRelationController.text,
                                 _relatedSubjectIdController.text.isNotEmpty ? _relatedSubjectIdController.text : null,
+                                _phoneController.text,
                               );
 
                               setState(() {
@@ -585,7 +638,7 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
                               );
                             }
                           }
-                        },
+                        } : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: (_isIdAvailable && _isEmailVerified) 
                               ? const Color(0xFF09E89E) 
@@ -1214,5 +1267,51 @@ class _SignupFamScreenState extends State<SignupFamScreen> {
         _relatedSubjectIdError = "대상자 확인 중 오류가 발생했습니다";
       });
     }
+  }
+
+  Widget _buildPhoneField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '전화번호',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 45,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: _phoneError != null ? Border.all(color: Colors.red, width: 1) : null,
+          ),
+          child: TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            onChanged: (value) => _validatePhone(value),
+            decoration: const InputDecoration(
+              hintText: '010-1234-5678',
+              hintStyle: TextStyle(color: Colors.grey),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+        if (_phoneError != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            _phoneError!,
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }

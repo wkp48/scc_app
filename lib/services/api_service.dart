@@ -88,6 +88,7 @@ class ApiService {
     required String password,
     required String birthDate,
     required String teacherName,
+    String? phoneNumber,
   }) async {
     try {
       final response = await http.post(
@@ -100,6 +101,7 @@ class ApiService {
           'password': password,
           'birthDate': birthDate,
           'teacherName': teacherName,
+          'phoneNumber': phoneNumber,
         }),
       );
       
@@ -207,7 +209,7 @@ class ApiService {
 
   // 가족 회원가입
   static Future<Map<String, dynamic>> signupFamily(String name, String userid, String email,
-      String password, String relationship, String? subjectUserid) async {
+      String password, String relationship, String? subjectUserid, String? phoneNumber) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/signup/family'),
@@ -219,6 +221,7 @@ class ApiService {
           'password': password,
           'relationship': relationship,
           if (subjectUserid != null) 'subjectUserid': subjectUserid,
+          if (phoneNumber != null) 'phoneNumber': phoneNumber,
         },
       );
 
